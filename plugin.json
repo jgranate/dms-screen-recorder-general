@@ -1,0 +1,12 @@
+{
+  "id": "recorder_general",
+  "name": "Screen Recorder (General)",
+  "description": "Quick screen recording options (Generalized)",
+  "version": "1.0.0",
+  "author": "Joe",
+  "icon": "camera-video",
+  "type": "widget",
+  "component": "./Recorder.qml",
+  "settings": "./Settings.qml",
+  "permissions": ["settings_read", "settings_write"]
+}
