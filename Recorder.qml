@@ -44,7 +44,7 @@ PluginComponent {
             }
             script += `
                 niri msg action set-dynamic-cast-window
-                [ "${modeData.prefix}" = "window_new" ] && notify-send "Screen Recorder" "Please select 'niri Dynamic Cast Target' and check 'Remember' if you want to reuse this selection later." -i camera-video
+                [ "${modeData.prefix}" = "window_new" ] && notify-send "Screen Recorder" "Please select your target and check 'Remember' to save it for future use." -i camera-video
                 gpu-screen-recorder -w portal ${root.extraGsrFlags} -o "$FILE" -restore-portal-session yes -portal-session-token-filepath ~/.cache/gsr-niri-token
             `;
         } else {
@@ -143,7 +143,6 @@ PluginComponent {
                 interval: 300; running: true
                 onTriggered: {
                     sShortcut.enabled = !root.isRecording;
-                    mShortcut.enabled = !root.isRecording;
                     wShortcut.enabled = !root.isRecording;
                     nShortcut.enabled = !root.isRecording;
                     enterShortcut.enabled = !root.isRecording;
@@ -153,11 +152,6 @@ PluginComponent {
             Shortcut {
                 id: sShortcut; enabled: false; sequence: "S"
                 onActivated: if (!root.isRecording) runMode({cmd: "slurp", prefix: "selection"})
-            }
-
-            Shortcut {
-                id: mShortcut; enabled: false; sequence: "M"
-                onActivated: if (!root.isRecording) runMode({cmd: "slurp -o", prefix: "monitor"})
             }
 
             Shortcut {
@@ -181,9 +175,8 @@ PluginComponent {
                 Repeater {
                     model: [
                         { label: "election", shortcut: "S", icon: "fullscreen_exit", cmd: "slurp", prefix: "selection" },
-                        { label: "onitor", shortcut: "M", icon: "monitor", cmd: "slurp -o", prefix: "monitor" },
-                        { label: "indow (Previous)", shortcut: "W", icon: "window", cmd: "", prefix: "window_prev" },
-                        { label: "ew Window Selection", shortcut: "N", icon: "add_to_photos", cmd: "", prefix: "window_new" }
+                        { label: "indow/Monitor (Previous)", shortcut: "W", icon: "window", cmd: "", prefix: "window_prev" },
+                        { label: "ew Selection", shortcut: "N", icon: "add_to_photos", cmd: "", prefix: "window_new" }
                     ]
                     delegate: StyledRect {
                         width: parent.width; height: 50; radius: Theme.cornerRadius
@@ -202,7 +195,7 @@ PluginComponent {
                 }
 
                 StyledText {
-                    text: "Use keyboard shortcuts (S/M/W/N)"
+                    text: "Use keyboard shortcuts (S/W/N)"
                     font.pixelSize: Theme.fontSizeSmall - 2
                     color: Theme.surfaceVariantText
                     horizontalAlignment: Text.AlignHCenter
@@ -214,5 +207,5 @@ PluginComponent {
     }
 
     popoutWidth: 280
-    popoutHeight: 340
+    popoutHeight: 280
 }
