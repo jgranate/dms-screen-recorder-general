@@ -68,8 +68,8 @@ PluginSettings {
         DankToggle {
             id: defaultFlagsToggle
             width: parent.width
-            text: "Use Default Flags"
-            description: "Default: -c libx264 -p preset=veryfast"
+            text: "Use Default wf-recorder Flags"
+            description: "For Selection/Monitor: -c libx264 -p preset=veryfast"
             checked: root.loadValue("useDefaultFlags", true)
             onToggled: isChecked => root.saveValue("useDefaultFlags", isChecked)
         }
@@ -86,6 +86,32 @@ PluginSettings {
             }
             StyledText { 
                 text: "Example (Intel): -c h264_vaapi -d /dev/dri/renderD128 -p preset=veryfast"
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.surfaceVariantText
+            }
+        }
+
+        DankToggle {
+            id: defaultGsrFlagsToggle
+            width: parent.width
+            text: "Use Default Window Rec Flags"
+            description: "For Window mode (GSR): -f 60 -q ultra -k hevc"
+            checked: root.loadValue("useDefaultGsrFlags", true)
+            onToggled: isChecked => root.saveValue("useDefaultGsrFlags", isChecked)
+        }
+
+        Column {
+            width: parent.width; spacing: Theme.spacingXS
+            visible: !root.loadValue("useDefaultGsrFlags", true)
+            StyledText { text: "Custom Window Rec (GSR) Flags"; font.pixelSize: Theme.fontSizeMedium; color: Theme.surfaceText }
+            DankTextField {
+                width: parent.width
+                placeholderText: "-f 60 -q ultra -k hevc"
+                text: root.loadValue("extraGsrFlags", "-f 60 -q ultra -k hevc")
+                onEditingFinished: root.saveValue("extraGsrFlags", text)
+            }
+            StyledText { 
+                text: "Example: -f 60 -q high -k h264 -cursor yes"
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.surfaceVariantText
             }
