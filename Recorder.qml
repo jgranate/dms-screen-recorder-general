@@ -23,19 +23,22 @@ PluginComponent {
     readonly property string timestampFormat: pluginData.timestampFormat || "%-d%b%y-%H%M-%S"
     readonly property bool showNotification: pluginData.showNotification !== undefined ? pluginData.showNotification : true
 
-    readonly property bool isNiri: true
+    property bool isNiri: Quickshell.env("XDG_CURRENT_DESKTOP") === "niri"
 
     function runMode(modeData) {
         const primaryHex = (Theme.primary || "#ff0000").toString();
         const surfaceHex = (Theme.surfaceContainerHighest || "#888888").toString();
         const slurpColors = `-B '${primaryHex}44' -b '${surfaceHex}66' -c '${primaryHex}ff' -w 2`;
-        const actualPrefix = root.filePrefix.replace("{mode}", modeData.prefix.replace("window_new", "window").replace("window_prev", "window"));
+        const modeName = modeData.prefix.replace("window_new", "window").replace("window_prev", "window");
+        const actualPrefix = root.filePrefix.replace("{mode}", modeName);
 
         let script = `
             SAVE_DIR=$(eval echo "${root.savePath}")
             mkdir -p "$SAVE_DIR"
             TS=$(date +"${root.timestampFormat}")
-            FILE="$SAVE_DIR/${actualPrefix}_$TS.mp4"
+            # Sanitize prefix to be safe for filenames
+            PREFIX=$(echo "${actualPrefix}" | sed 's/[^a-zA-Z0-9_-]/_/g')
+            FILE="$SAVE_DIR/\${PREFIX}_\$TS.mp4"
         `;
 
         if (modeData.prefix.startsWith("window")) {
@@ -70,9 +73,10 @@ PluginComponent {
     }
 
     function stopRecording() {
-        Quickshell.execDetached(["pkill", "-INT", "-x", "wf-recorder"]);
-        Quickshell.execDetached(["pkill", "-INT", "-x", "gpu-screen-reco"]);
+        Quickshell.execDetached(["pkill", "-INT", "-f", "wf-recorder"]);
+        Quickshell.execDetached(["pkill", "-INT", "-f", "gpu-screen-recorder"]);
         root.closePopout();
+        // Delay status update slightly to let processes exit
         Qt.callLater(() => {
             checkProcess.running = false;
             checkProcess.running = true;
@@ -81,13 +85,13 @@ PluginComponent {
 
     Process {
         id: checkProcess
-        command: ["sh", "-c", "pgrep -x wf-recorder || pgrep -x gpu-screen-reco"]
+        command: ["sh", "-c", "pgrep -f wf-recorder || pgrep -f gpu-screen-recorder"]
         onExited: (exitCode) => root.isRecording = (exitCode === 0)
     }
 
     Timer {
         id: statusTimer
-        interval: 300; repeat: true; running: true; triggeredOnStart: true
+        interval: 500; repeat: true; running: true; triggeredOnStart: true
         onTriggered: {
             checkProcess.running = false;
             checkProcess.running = true;
@@ -139,34 +143,27 @@ PluginComponent {
             detailsText: "Select recording mode"
             showCloseButton: true
 
-            Timer {
-                interval: 300; running: true
-                onTriggered: {
-                    sShortcut.enabled = !root.isRecording;
-                    wShortcut.enabled = !root.isRecording;
-                    nShortcut.enabled = !root.isRecording;
-                    enterShortcut.enabled = !root.isRecording;
-                }
+            // Use the root timer's status to drive shortcut state
+            property bool canRecord: !root.isRecording
+
+            Shortcut {
+                id: sShortcut; enabled: parent.canRecord; sequence: "S"
+                onActivated: if (parent.canRecord) runMode({cmd: "slurp", prefix: "selection"})
             }
 
             Shortcut {
-                id: sShortcut; enabled: false; sequence: "S"
-                onActivated: if (!root.isRecording) runMode({cmd: "slurp", prefix: "selection"})
+                id: wShortcut; enabled: parent.canRecord; sequence: "W"
+                onActivated: if (parent.canRecord) runMode({cmd: "", prefix: "window_prev"})
             }
 
             Shortcut {
-                id: wShortcut; enabled: false; sequence: "W"
-                onActivated: if (!root.isRecording) runMode({cmd: "", prefix: "window_prev"})
+                id: nShortcut; enabled: parent.canRecord; sequence: "N"
+                onActivated: if (parent.canRecord) runMode({cmd: "", prefix: "window_new"})
             }
 
             Shortcut {
-                id: nShortcut; enabled: false; sequence: "N"
-                onActivated: if (!root.isRecording) runMode({cmd: "", prefix: "window_new"})
-            }
-
-            Shortcut {
-                id: enterShortcut; enabled: false; sequence: "Return"
-                onActivated: if (!root.isRecording) runMode({cmd: "", prefix: "window_prev"})
+                id: enterShortcut; enabled: parent.canRecord; sequence: "Return"
+                onActivated: if (parent.canRecord) runMode({cmd: "", prefix: "window_prev"})
             }
 
             Column {
