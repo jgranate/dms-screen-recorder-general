@@ -85,7 +85,7 @@ PluginComponent {
 
     Process {
         id: checkProcess
-        command: ["sh", "-c", "pgrep -f wf-recorder || pgrep -f gpu-screen-recorder"]
+        command: ["sh", "-c", "pgrep -f [w]f-recorder || pgrep -f [g]pu-screen-recorder"]
         onExited: (exitCode) => root.isRecording = (exitCode === 0)
     }
 
